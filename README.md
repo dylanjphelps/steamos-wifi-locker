@@ -33,8 +33,8 @@ and disables the service, and removes the locker files.
 
 - The selector scans for access points with the saved network's SSID.
 - It prefers 6 GHz, then 5 GHz, then 2.4 GHz, choosing the strongest signal in
-  the highest band with at least 40% signal.
-- If all visible access points are below 40%, it chooses the strongest one. If
+  the highest band with at least 70% signal.
+- If all visible access points are below 70%, it chooses the strongest one. If
   none are visible, it clears the BSSID restriction so NetworkManager can
   reconnect when the network returns.
 - It reevaluates at boot, after waking from sleep, and when Wi-Fi reconnects; it

@@ -51,7 +51,7 @@ sudo install -m 0755 "${tmp_dir}/package/src/sleep-hook" \
     /etc/systemd/system-sleep/steamos-wifi-locker
 sudo install -m 0644 "${tmp_dir}/package/systemd/steamos-wifi-locker.service" \
     /etc/systemd/system/steamos-wifi-locker.service
-printf 'CONNECTION_UUID=%s\nWIFI_DEVICE=%s\nSIGNAL_FLOOR=40\n' \
+printf 'CONNECTION_UUID=%s\nWIFI_DEVICE=%s\nSIGNAL_FLOOR=70\n' \
     "$connection_uuid" "$wifi_device" |
     sudo tee /etc/steamos-wifi-locker.conf >/dev/null
 
@@ -59,4 +59,4 @@ sudo /etc/steamos-wifi-locker/lock-bssid
 sudo systemctl daemon-reload
 sudo systemctl enable --now steamos-wifi-locker.service
 
-printf 'Installed. BSSID selection prefers 6 GHz, then 5 GHz, then 2.4 GHz, with a 40%% signal floor.\n'
+printf 'Installed. BSSID selection prefers 6 GHz, then 5 GHz, then 2.4 GHz, with a 70%% signal floor.\n'
