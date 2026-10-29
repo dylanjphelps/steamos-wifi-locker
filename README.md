@@ -30,6 +30,7 @@ To select a different access point, connect to it and run the installer again.
 
 ## Releases
 
-Push a version tag such as `v1.0.0` to create a GitHub release. The release
-workflow attaches `install.sh` and `steamos-wifi-locker.tar.gz`, which are the
-assets used by the one-line install command.
+Every push to `main` creates a GitHub release with the next patch version
+(starting after `v1.0.0`) and attaches `install.sh` and
+`steamos-wifi-locker.tar.gz`. The one-line install command always fetches those
+assets from the latest release. No manual version tag is needed.
