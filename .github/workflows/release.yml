@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*"
 
 permissions:
   contents: write
@@ -13,31 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Package release
         run: |
           tar -czf steamos-wifi-locker.tar.gz src systemd
-      - name: Calculate next patch version
-        id: version
-        run: |
-          set -euo pipefail
-          latest_tag="$(git tag --list 'v*' --sort=-version:refname |
-            grep -E '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' |
-            head -n 1 || true)"
-          if [[ -z "$latest_tag" ]]; then
-            printf 'No vMAJOR.MINOR.PATCH tag found; cannot calculate the next release.\n' >&2
-            exit 1
-          fi
-          IFS=. read -r major minor patch <<< "${latest_tag#v}"
-          printf 'tag=v%s.%s.%s\n' "$major" "$minor" "$((patch + 1))" >> "$GITHUB_OUTPUT"
       - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ steps.version.outputs.tag }}" \
+          gh release create "${GITHUB_REF_NAME}" \
             install.sh \
             steamos-wifi-locker.tar.gz \
-            --title "${{ steps.version.outputs.tag }}" \
+            --title "${GITHUB_REF_NAME}" \
             --target "${GITHUB_SHA}" \
             --generate-notes
