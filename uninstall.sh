@@ -11,6 +11,7 @@ for command in sudo systemctl; do
     fi
 done
 
+connection_uuid=""
 if [[ -r "$config_file" ]]; then
     connection_uuid="$(sed -n 's/^CONNECTION_UUID=//p' "$config_file" | head -n 1)"
     if [[ ! "$connection_uuid" =~ ^[[:xdigit:]-]+$ ]]; then
@@ -21,7 +22,6 @@ if [[ -r "$config_file" ]]; then
         printf 'Required command not found: nmcli; cannot clear the saved BSSID restriction.\n' >&2
         exit 1
     fi
-    sudo nmcli connection modify uuid "$connection_uuid" 802-11-wireless.bssid ""
 else
     printf 'No locker config found; no NetworkManager BSSID restriction was changed.\n' >&2
 fi
@@ -32,7 +32,12 @@ fi
 
 sudo rm -f \
     /etc/NetworkManager/dispatcher.d/90-steamos-wifi-locker \
-    /etc/systemd/system-sleep/steamos-wifi-locker \
+    /etc/systemd/system-sleep/steamos-wifi-locker
+if [[ -n "$connection_uuid" ]]; then
+    sudo nmcli connection modify uuid "$connection_uuid" 802-11-wireless.bssid ""
+fi
+
+sudo rm -f \
     /etc/systemd/system/steamos-wifi-locker.service \
     /etc/steamos-wifi-locker/lock-bssid \
     "$config_file"

@@ -91,6 +91,8 @@ current_bssid="$(nmcli -g 802-11-wireless.bssid connection show uuid "$CONNECTIO
 if [[ "$current_bssid" == "--" ]]; then
     current_bssid=""
 fi
+current_bssid="$(printf '%s' "$current_bssid" | tr '[:lower:]' '[:upper:]')"
+selected_bssid="$(printf '%s' "$selected_bssid" | tr '[:lower:]' '[:upper:]')"
 
 if [[ -z "$selected_bssid" ]]; then
     if [[ -n "$current_bssid" ]]; then
@@ -107,5 +109,4 @@ if [[ "$selected_bssid" == "$current_bssid" ]]; then
 fi
 
 nmcli connection modify uuid "$CONNECTION_UUID" 802-11-wireless.bssid "$selected_bssid"
-printf 'Selected BSSID %s for SSID %s.\n' "$selected_bssid" "$ssid"
-nmcli connection up uuid "$CONNECTION_UUID" ifname "$WIFI_DEVICE"
+printf 'Configured BSSID %s for SSID %s on the next connection.\n' "$selected_bssid" "$ssid"

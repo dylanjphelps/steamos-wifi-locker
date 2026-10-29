@@ -3,7 +3,9 @@
 Choose an access point (BSSID) for a SteamOS Wi-Fi connection, preferring higher
 frequency bands while still considering signal strength. The selection is
 stored in the NetworkManager connection profile and refreshed at boot, after
-waking from sleep, and when Wi-Fi reconnects.
+waking from sleep, and when Wi-Fi reconnects. A changed selection applies on
+the next connection; the selector does not force an active connection to
+reconnect.
 
 ## Install
 
