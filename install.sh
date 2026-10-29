@@ -55,7 +55,6 @@ printf 'CONNECTION_UUID=%s\nWIFI_DEVICE=%s\nSIGNAL_FLOOR=70\n' \
     "$connection_uuid" "$wifi_device" |
     sudo tee /etc/steamos-wifi-locker.conf >/dev/null
 
-sudo /etc/steamos-wifi-locker/lock-bssid
 sudo systemctl daemon-reload
 sudo systemctl enable --now steamos-wifi-locker.service
 
