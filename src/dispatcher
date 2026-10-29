@@ -12,7 +12,7 @@ source "$config_file"
 if [[ "${1:-}" == "${WIFI_DEVICE:-}" ]]; then
     case "${2:-}" in
         up)
-            exec systemctl start --no-block steamos-wifi-locker.service
+            exec systemctl restart --no-block steamos-wifi-locker.service
             ;;
         down)
             if [[ ! "$event_connection_uuid" =~ ^[[:xdigit:]-]+$ ]]; then
