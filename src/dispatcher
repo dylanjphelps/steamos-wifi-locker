@@ -1,9 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "${2:-}" == "up" && -r /etc/steamos-wifi-locker.conf ]]; then
-    source /etc/steamos-wifi-locker.conf
-    if [[ "${1:-}" == "${WIFI_DEVICE:-}" ]]; then
-        exec systemctl start --no-block steamos-wifi-locker.service
-    fi
+config_file="${STEAMOS_WIFI_LOCKER_CONFIG:-/etc/steamos-wifi-locker.conf}"
+if [[ ! -r "$config_file" ]]; then
+    printf 'Configuration file not found: %s\n' "$config_file" >&2
+    exit 1
+fi
+
+event_connection_uuid="${CONNECTION_UUID:-}"
+source "$config_file"
+if [[ "${1:-}" == "${WIFI_DEVICE:-}" ]]; then
+    case "${2:-}" in
+        up)
+            exec systemctl start --no-block steamos-wifi-locker.service
+            ;;
+        down)
+            if [[ ! "$event_connection_uuid" =~ ^[[:xdigit:]-]+$ ]]; then
+                printf 'No valid connection UUID in NetworkManager down event.\n' >&2
+                exit 1
+            fi
+            current_bssid="$(nmcli -g 802-11-wireless.bssid connection show uuid "$event_connection_uuid")"
+            if [[ -n "$current_bssid" && "$current_bssid" != "--" ]]; then
+                nmcli connection modify uuid "$event_connection_uuid" 802-11-wireless.bssid ""
+            fi
+            ;;
+    esac
 fi

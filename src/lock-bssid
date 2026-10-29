@@ -9,16 +9,26 @@ fi
 
 source "$config_file"
 
-if [[ ! "${CONNECTION_UUID:-}" =~ ^[[:xdigit:]-]+$ ]] ||
-    [[ ! "${WIFI_DEVICE:-}" =~ ^[[:alnum:]_.:-]+$ ]] ||
+if [[ ! "${WIFI_DEVICE:-}" =~ ^[[:alnum:]_.:-]+$ ]] ||
     [[ ! "${SIGNAL_FLOOR:-}" =~ ^([0-9]|[1-9][0-9]|100)$ ]]; then
-    printf 'Invalid connection UUID, Wi-Fi device, or signal floor in %s\n' "$config_file" >&2
+    printf 'Invalid Wi-Fi device or signal floor in %s\n' "$config_file" >&2
     exit 1
 fi
 
-ssid="$(nmcli -g 802-11-wireless.ssid connection show uuid "$CONNECTION_UUID")"
+connection_uuid="$(nmcli -g GENERAL.CON-UUID device show "$WIFI_DEVICE")"
+if [[ -z "$connection_uuid" || "$connection_uuid" == "--" ]]; then
+    printf 'No active NetworkManager connection on %s; waiting for Wi-Fi to connect.\n' \
+        "$WIFI_DEVICE" >&2
+    exit 0
+fi
+if [[ ! "$connection_uuid" =~ ^[[:xdigit:]-]+$ ]]; then
+    printf 'Invalid active connection UUID on %s\n' "$WIFI_DEVICE" >&2
+    exit 1
+fi
+
+ssid="$(nmcli -g 802-11-wireless.ssid connection show uuid "$connection_uuid")"
 if [[ -z "$ssid" ]]; then
-    printf 'Could not read the SSID for connection %s\n' "$CONNECTION_UUID" >&2
+    printf 'Could not read the SSID for connection %s\n' "$connection_uuid" >&2
     exit 1
 fi
 
@@ -87,7 +97,7 @@ if [[ -z "$selected_bssid" ]]; then
     fi
 fi
 
-current_bssid="$(nmcli -g 802-11-wireless.bssid connection show uuid "$CONNECTION_UUID")"
+current_bssid="$(nmcli -g 802-11-wireless.bssid connection show uuid "$connection_uuid")"
 if [[ "$current_bssid" == "--" ]]; then
     current_bssid=""
 fi
@@ -96,7 +106,7 @@ selected_bssid="$(printf '%s' "$selected_bssid" | tr '[:lower:]' '[:upper:]')"
 
 if [[ -z "$selected_bssid" ]]; then
     if [[ -n "$current_bssid" ]]; then
-        nmcli connection modify uuid "$CONNECTION_UUID" 802-11-wireless.bssid ""
+        nmcli connection modify uuid "$connection_uuid" 802-11-wireless.bssid ""
     fi
     printf 'No visible access point for SSID %s; cleared the BSSID pin so NetworkManager can reconnect.\n' \
         "$ssid" >&2
@@ -108,5 +118,5 @@ if [[ "$selected_bssid" == "$current_bssid" ]]; then
     exit 0
 fi
 
-nmcli connection modify uuid "$CONNECTION_UUID" 802-11-wireless.bssid "$selected_bssid"
+nmcli connection modify uuid "$connection_uuid" 802-11-wireless.bssid "$selected_bssid"
 printf 'Configured BSSID %s for SSID %s on the next connection.\n' "$selected_bssid" "$ssid"

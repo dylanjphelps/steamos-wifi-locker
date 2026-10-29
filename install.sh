@@ -27,18 +27,12 @@ if [[ -z "$wifi_device" ]]; then
     exit 1
 fi
 
-connection_uuid="$(nmcli -g GENERAL.CON-UUID device show "$wifi_device")"
-
-if [[ ! "$connection_uuid" =~ ^[[:xdigit:]-]+$ ]]; then
-    printf 'Could not determine the active NetworkManager connection UUID.\n' >&2
-    exit 1
-fi
 if [[ ! "$wifi_device" =~ ^[[:alnum:]_.:-]+$ ]]; then
     printf 'Could not determine a valid Wi-Fi device name.\n' >&2
     exit 1
 fi
 
-printf 'Configuring adaptive BSSID selection for connection %s.\n' "$connection_uuid"
+printf 'Configuring adaptive BSSID selection for Wi-Fi device %s.\n' "$wifi_device"
 sudo install -d -m 0755 \
     /etc/steamos-wifi-locker \
     /etc/NetworkManager/dispatcher.d \
@@ -51,8 +45,7 @@ sudo install -m 0755 "${tmp_dir}/package/src/sleep-hook" \
     /etc/systemd/system-sleep/steamos-wifi-locker
 sudo install -m 0644 "${tmp_dir}/package/systemd/steamos-wifi-locker.service" \
     /etc/systemd/system/steamos-wifi-locker.service
-printf 'CONNECTION_UUID=%s\nWIFI_DEVICE=%s\nSIGNAL_FLOOR=70\n' \
-    "$connection_uuid" "$wifi_device" |
+printf 'WIFI_DEVICE=%s\nSIGNAL_FLOOR=70\n' "$wifi_device" |
     sudo tee /etc/steamos-wifi-locker.conf >/dev/null
 
 sudo systemctl daemon-reload
