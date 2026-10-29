@@ -1,19 +1,111 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-config_file="/etc/steamos-wifi-locker.conf"
+config_file="${STEAMOS_WIFI_LOCKER_CONFIG:-/etc/steamos-wifi-locker.conf}"
 if [[ ! -r "$config_file" ]]; then
     printf 'Configuration file not found: %s\n' "$config_file" >&2
     exit 1
 fi
 
-# The installer only writes validated UUID and BSSID values to this file.
 source "$config_file"
 
 if [[ ! "${CONNECTION_UUID:-}" =~ ^[[:xdigit:]-]+$ ]] ||
-    [[ ! "${BSSID:-}" =~ ^([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}$ ]]; then
-    printf 'Invalid connection UUID or BSSID in %s\n' "$config_file" >&2
+    [[ ! "${WIFI_DEVICE:-}" =~ ^[[:alnum:]_.:-]+$ ]] ||
+    [[ ! "${SIGNAL_FLOOR:-}" =~ ^([0-9]|[1-9][0-9]|100)$ ]]; then
+    printf 'Invalid connection UUID, Wi-Fi device, or signal floor in %s\n' "$config_file" >&2
     exit 1
 fi
 
-nmcli connection modify uuid "$CONNECTION_UUID" 802-11-wireless.bssid "$BSSID"
+ssid="$(nmcli -g 802-11-wireless.ssid connection show uuid "$CONNECTION_UUID")"
+if [[ -z "$ssid" ]]; then
+    printf 'Could not read the SSID for connection %s\n' "$CONNECTION_UUID" >&2
+    exit 1
+fi
+
+scan_wifi() {
+    nmcli -t --escape no -f FREQ,SIGNAL,BSSID,SSID device wifi list ifname "$WIFI_DEVICE"
+}
+
+select_candidate() {
+    local scan_results="$1"
+    local frequency signal octet1 octet2 octet3 octet4 octet5 octet6 candidate_ssid
+    local numeric_frequency band candidate_bssid
+    local preferred_band=-1 preferred_signal=-1 preferred_bssid=""
+    local strongest_band=-1 strongest_signal=-1 strongest_bssid=""
+
+    while IFS=: read -r frequency signal octet1 octet2 octet3 octet4 octet5 octet6 candidate_ssid; do
+        [[ "$candidate_ssid" == "$ssid" ]] || continue
+        [[ "$signal" =~ ^[0-9]+$ ]] || continue
+
+        numeric_frequency="${frequency%% *}"
+        [[ "$numeric_frequency" =~ ^[0-9]+$ ]] || continue
+        if (( numeric_frequency >= 5925 && numeric_frequency <= 7125 )); then
+            band=3
+        elif (( numeric_frequency >= 4900 && numeric_frequency < 5925 )); then
+            band=2
+        elif (( numeric_frequency >= 2400 && numeric_frequency <= 2500 )); then
+            band=1
+        else
+            continue
+        fi
+
+        candidate_bssid="${octet1}:${octet2}:${octet3}:${octet4}:${octet5}:${octet6}"
+        [[ "$candidate_bssid" =~ ^([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}$ ]] || continue
+
+        if (( signal > strongest_signal || (signal == strongest_signal && band > strongest_band) )); then
+            strongest_signal="$signal"
+            strongest_band="$band"
+            strongest_bssid="$candidate_bssid"
+        fi
+
+        if (( signal >= SIGNAL_FLOOR &&
+            (band > preferred_band || (band == preferred_band && signal > preferred_signal)) )); then
+            preferred_signal="$signal"
+            preferred_band="$band"
+            preferred_bssid="$candidate_bssid"
+        fi
+    done <<< "$scan_results"
+
+    selected_bssid="${preferred_bssid:-$strongest_bssid}"
+}
+
+if ! scan_results="$(scan_wifi 2>&1)"; then
+    printf 'Could not list Wi-Fi access points on %s: %s\n' "$WIFI_DEVICE" "$scan_results" >&2
+    scan_results=""
+fi
+select_candidate "$scan_results"
+if [[ -z "$selected_bssid" ]]; then
+    if ! rescan_error="$(nmcli device wifi rescan ifname "$WIFI_DEVICE" 2>&1)"; then
+        printf 'Could not start a Wi-Fi scan on %s: %s\n' "$WIFI_DEVICE" "$rescan_error" >&2
+    else
+        sleep 2
+        if ! scan_results="$(scan_wifi 2>&1)"; then
+            printf 'Could not list Wi-Fi access points on %s: %s\n' "$WIFI_DEVICE" "$scan_results" >&2
+            scan_results=""
+        fi
+        select_candidate "$scan_results"
+    fi
+fi
+
+current_bssid="$(nmcli -g 802-11-wireless.bssid connection show uuid "$CONNECTION_UUID")"
+if [[ "$current_bssid" == "--" ]]; then
+    current_bssid=""
+fi
+
+if [[ -z "$selected_bssid" ]]; then
+    if [[ -n "$current_bssid" ]]; then
+        nmcli connection modify uuid "$CONNECTION_UUID" 802-11-wireless.bssid ""
+    fi
+    printf 'No visible access point for SSID %s; cleared the BSSID pin so NetworkManager can reconnect.\n' \
+        "$ssid" >&2
+    exit 0
+fi
+
+if [[ "$selected_bssid" == "$current_bssid" ]]; then
+    printf 'Best available BSSID for SSID %s is already selected: %s\n' "$ssid" "$selected_bssid"
+    exit 0
+fi
+
+nmcli connection modify uuid "$CONNECTION_UUID" 802-11-wireless.bssid "$selected_bssid"
+printf 'Selected BSSID %s for SSID %s.\n' "$selected_bssid" "$ssid"
+nmcli connection up uuid "$CONNECTION_UUID" ifname "$WIFI_DEVICE"

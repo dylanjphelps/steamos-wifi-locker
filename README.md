@@ -1,9 +1,9 @@
-# SteamOS Wi-Fi BSSID Locker
+# SteamOS Wi-Fi BSSID Selector
 
-Lock a SteamOS device's active Wi-Fi connection to the access point (BSSID) it
-is currently using. The lock is stored in the NetworkManager connection profile,
-so it applies when the device reconnects after boot, waking from sleep, or
-toggling Wi-Fi off and on.
+Choose an access point (BSSID) for a SteamOS Wi-Fi connection, preferring higher
+frequency bands while still considering signal strength. The selection is
+stored in the NetworkManager connection profile and refreshed at boot, after
+waking from sleep, and when Wi-Fi reconnects.
 
 ## Install
 
@@ -15,18 +15,21 @@ curl -fsSL https://github.com/dylanjphelps/steamos-wifi-locker/releases/latest/d
 
 The installer downloads the package attached to the latest GitHub release. It
 asks for administrator permission to install and enable the service. Run it
-while connected to the target network; it locks the active NetworkManager
-connection to the BSSID currently in use.
+while connected to the Wi-Fi network you want to configure; it records that
+NetworkManager connection and its Wi-Fi device.
 
 ## Behavior
 
-- A system service reapplies the lock at boot.
-- A NetworkManager dispatcher hook reapplies it when a Wi-Fi device comes up.
-- A system-sleep hook reapplies it after suspend or hibernation.
-- The connection profile itself is configured with the chosen BSSID, so the
-  access point is selected during reconnection rather than after it.
+- The selector scans for access points with the saved network's SSID.
+- It prefers 6 GHz, then 5 GHz, then 2.4 GHz, choosing the strongest signal in
+  the highest band with at least 40% signal.
+- If all visible access points are below 40%, it chooses the strongest one. If
+  none are visible, it clears the BSSID restriction so NetworkManager can
+  reconnect when the network returns.
+- It reevaluates at boot, after waking from sleep, and when Wi-Fi reconnects; it
+  does not continuously scan while connected.
 
-To select a different access point, connect to it and run the installer again.
+To select a different network, connect to it and run the installer again.
 
 ## Releases
 

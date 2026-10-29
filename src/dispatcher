@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "${2:-}" == "up" ]]; then
-    exec /etc/steamos-wifi-locker/lock-bssid
+if [[ "${2:-}" == "up" && -r /etc/steamos-wifi-locker.conf ]]; then
+    source /etc/steamos-wifi-locker.conf
+    if [[ "${1:-}" == "${WIFI_DEVICE:-}" ]]; then
+        exec systemctl start --no-block steamos-wifi-locker.service
+    fi
 fi

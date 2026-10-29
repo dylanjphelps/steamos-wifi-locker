@@ -2,5 +2,5 @@
 set -euo pipefail
 
 if [[ "${1:-}" == "post" ]]; then
-    exec /etc/steamos-wifi-locker/lock-bssid
+    exec systemctl start --no-block steamos-wifi-locker.service
 fi

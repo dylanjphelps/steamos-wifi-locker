@@ -1,5 +1,5 @@
 [Unit]
-Description=Lock SteamOS Wi-Fi connection to its configured BSSID
+Description=Select the preferred BSSID for the SteamOS Wi-Fi connection
 Wants=NetworkManager.service
 After=NetworkManager.service
 
