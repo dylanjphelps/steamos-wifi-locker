@@ -22,6 +22,7 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" \
             install.sh \
+            uninstall.sh \
             steamos-wifi-locker.tar.gz \
             --title "${GITHUB_REF_NAME}" \
             --target "${GITHUB_SHA}" \

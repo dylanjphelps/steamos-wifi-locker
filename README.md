@@ -18,6 +18,17 @@ asks for administrator permission to install and enable the service. Run it
 while connected to the Wi-Fi network you want to configure; it records that
 NetworkManager connection and its Wi-Fi device.
 
+## Uninstall
+
+Open Konsole and run:
+
+```sh
+curl -fsSL https://github.com/dylanjphelps/steamos-wifi-locker/releases/latest/download/uninstall.sh | bash
+```
+
+The uninstaller clears the BSSID restriction from the saved connection, stops
+and disables the service, and removes the locker files.
+
 ## Behavior
 
 - The selector scans for access points with the saved network's SSID.
