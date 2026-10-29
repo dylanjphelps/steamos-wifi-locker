@@ -1,0 +1,27 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package release
+        run: |
+          tar -czf steamos-wifi-locker.tar.gz src systemd
+      - name: Publish release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            install.sh \
+            steamos-wifi-locker.tar.gz \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes

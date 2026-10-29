@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config_file="/etc/steamos-wifi-locker.conf"
+if [[ ! -r "$config_file" ]]; then
+    printf 'Configuration file not found: %s\n' "$config_file" >&2
+    exit 1
+fi
+
+# The installer only writes validated UUID and BSSID values to this file.
+source "$config_file"
+
+if [[ ! "${CONNECTION_UUID:-}" =~ ^[[:xdigit:]-]+$ ]] ||
+    [[ ! "${BSSID:-}" =~ ^([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}$ ]]; then
+    printf 'Invalid connection UUID or BSSID in %s\n' "$config_file" >&2
+    exit 1
+fi
+
+nmcli connection modify uuid "$CONNECTION_UUID" 802-11-wireless.bssid "$BSSID"
