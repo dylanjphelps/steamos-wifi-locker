@@ -81,20 +81,20 @@ select_candidate() {
 
 if ! scan_results="$(scan_wifi 2>&1)"; then
     printf 'Could not list Wi-Fi access points on %s: %s\n' "$WIFI_DEVICE" "$scan_results" >&2
-    scan_results=""
+    exit 1
 fi
 select_candidate "$scan_results"
 if [[ -z "$selected_bssid" ]]; then
     if ! rescan_error="$(nmcli device wifi rescan ifname "$WIFI_DEVICE" 2>&1)"; then
         printf 'Could not start a Wi-Fi scan on %s: %s\n' "$WIFI_DEVICE" "$rescan_error" >&2
-    else
-        sleep 2
-        if ! scan_results="$(scan_wifi 2>&1)"; then
-            printf 'Could not list Wi-Fi access points on %s: %s\n' "$WIFI_DEVICE" "$scan_results" >&2
-            scan_results=""
-        fi
-        select_candidate "$scan_results"
+        exit 1
     fi
+    sleep 2
+    if ! scan_results="$(scan_wifi 2>&1)"; then
+        printf 'Could not list Wi-Fi access points on %s: %s\n' "$WIFI_DEVICE" "$scan_results" >&2
+        exit 1
+    fi
+    select_candidate "$scan_results"
 fi
 
 current_bssid="$(nmcli -g 802-11-wireless.bssid connection show uuid "$connection_uuid")"

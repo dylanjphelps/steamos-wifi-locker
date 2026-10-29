@@ -40,6 +40,8 @@ all saved Wi-Fi profiles, and removes the locker files.
 - If all visible access points are below 70%, it chooses the strongest one. If
   none are visible, it clears the BSSID restriction so NetworkManager can
   reconnect when the network returns.
+- If NetworkManager cannot scan, the selector reports an error and leaves the
+  profile's current BSSID restriction unchanged.
 - It reevaluates at boot, after waking from sleep, and when Wi-Fi reconnects; it
   does not continuously scan while connected.
 
