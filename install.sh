@@ -35,20 +35,19 @@ fi
 printf 'Configuring adaptive BSSID selection for Wi-Fi device %s.\n' "$wifi_device"
 sudo install -d -m 0755 \
     /etc/steamos-wifi-locker \
-    /etc/NetworkManager/dispatcher.d \
-    /etc/systemd/system-sleep
+    /etc/NetworkManager/dispatcher.d
 sudo install -m 0755 "${tmp_dir}/package/src/lock-bssid" \
     /etc/steamos-wifi-locker/lock-bssid
 sudo install -m 0755 "${tmp_dir}/package/src/dispatcher" \
     /etc/NetworkManager/dispatcher.d/90-steamos-wifi-locker
-sudo install -m 0755 "${tmp_dir}/package/src/sleep-hook" \
-    /etc/systemd/system-sleep/steamos-wifi-locker
 sudo install -m 0644 "${tmp_dir}/package/systemd/steamos-wifi-locker.service" \
     /etc/systemd/system/steamos-wifi-locker.service
+sudo rm -f /etc/systemd/system-sleep/steamos-wifi-locker
 printf 'WIFI_DEVICE=%s\nSIGNAL_FLOOR=70\n' "$wifi_device" |
     sudo tee /etc/steamos-wifi-locker.conf >/dev/null
 
 sudo systemctl daemon-reload
-sudo systemctl enable --now steamos-wifi-locker.service
+sudo systemctl disable --now steamos-wifi-locker.service
+sudo systemctl start --no-block steamos-wifi-locker.service
 
 printf 'Installed. BSSID selection prefers 6 GHz, then 5 GHz, then 2.4 GHz, with a 70%% signal floor.\n'

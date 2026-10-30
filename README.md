@@ -2,10 +2,9 @@
 
 Choose an access point (BSSID) for whichever SteamOS Wi-Fi network is currently
 connected, preferring higher frequency bands while still considering signal
-strength. The selection is stored in that NetworkManager profile and refreshed
-when the Wi-Fi connection changes, at boot, and after waking from sleep. A
-changed selection applies on the next connection; the selector does not force
-an active connection to reconnect.
+strength. The selection is stored in that NetworkManager profile and scanned
+when Wi-Fi connects. A changed selection applies on the next connection; the
+selector does not force an active connection to reconnect.
 
 ## Install
 
@@ -34,7 +33,7 @@ all saved Wi-Fi profiles, and removes the locker files.
 
 - When a Wi-Fi connection goes down, the selector clears that profile's BSSID
   restriction. When a connection comes up, it scans for access points matching
-  the active profile's SSID.
+  the active profile's SSID. It also scans once during installation.
 - It prefers 6 GHz, then 5 GHz, then 2.4 GHz, choosing the strongest signal in
   the highest band with at least 70% signal.
 - If all visible access points are below 70%, it chooses the strongest one. If
@@ -42,8 +41,8 @@ all saved Wi-Fi profiles, and removes the locker files.
   reconnect when the network returns.
 - If NetworkManager cannot scan, the selector reports an error and leaves the
   profile's current BSSID restriction unchanged.
-- It reevaluates at boot, after waking from sleep, and when Wi-Fi reconnects; it
-  does not continuously scan while connected.
+- It scans only on connection and installation; it does not scan at boot, after
+  waking from sleep, or continuously while connected.
 
 Changing to another saved network automatically triggers a scan and selection
 for that network; reinstalling is not necessary.

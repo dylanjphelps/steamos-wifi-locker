@@ -6,6 +6,3 @@ After=NetworkManager.service
 [Service]
 Type=oneshot
 ExecStart=/etc/steamos-wifi-locker/lock-bssid
-
-[Install]
-WantedBy=multi-user.target
